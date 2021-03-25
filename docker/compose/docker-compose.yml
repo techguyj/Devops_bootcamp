@@ -1,0 +1,15 @@
+version: '3'
+services:
+  database:
+    image: "postgres"
+    env_file:
+      - db.env
+    volumes:
+      - database-data:/var/lib/postgresql/data/ 
+  nginx:
+    image: nginx
+    ports:
+      - "4000"
+volumes:
+  database-data:
+

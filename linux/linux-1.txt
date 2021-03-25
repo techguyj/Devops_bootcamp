@@ -1,0 +1,53 @@
+sudo groupadd testgroup
+sudo useradd usertest1
+sudo useradd usertest2
+sudo usermod -aG testgroup usertest1
+sudo usermod -aG testgroup usertest2
+sudo vim /etc/sudoers
+
+# Members of the admin group may gain root privileges
+%testgroup ALL=(ALL) NOPASSWD: ALL
+
+sudo vim /etc/pam.d/su
+
+auth       [success=ignore default=1] pam_succeed_if.so user = usertest2
+auth       sufficient   pam_succeed_if.so use_uid user ingroup testgroup
+
+
+
+mkdir -p /home/usertest2/tomcat
+/bin/su -s /bin/bash -c "/tmp/tomcat_script.sh" - usertest1
+
+
+cat /etc/systemd/system/tomcat.service
+
+[Unit]
+Description=Tomcat 9 servlet container
+After=network.target
+
+[Service]
+Type=forking
+
+User=usertest2
+Group=testgroup
+
+Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/"
+Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom -Djava.awt.headless=true"
+
+Environment="CATALINA_BASE=/home/usertest2/tomcat/latest"
+Environment="CATALINA_HOME=/home/usertest2/tomcat/latest"
+Environment="CATALINA_PID=/home/usertest2/tomcat/latest/temp/tomcat.pid"
+Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+
+ExecStart=/home/usertest2/tomcat/latest/bin/startup.sh
+ExecStop=/home/usertest2/tomcat/latest/bin/shutdown.sh
+
+[Install]
+WantedBy=multi-user.target
+
+
+mkdir -p /home/usertest1/WebDir
+
+echo "*/30 * * * SUN-THU rsync -ravh /home/usertest1/WebDir /home/usertest2/tomcat/website" > /var/spool/cron/root
+
+

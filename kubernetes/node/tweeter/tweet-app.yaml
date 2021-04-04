@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tweet
+  labels:
+    app: tweet
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: tweet
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tweet
+  labels:
+    app: tweet
+spec:
+  selector:
+    matchLabels:
+      app: tweet
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: tweet
+        tier: frontend
+    spec:
+      containers:
+      - image: techguyj/tweet
+        name: tweet
+        env:
+        - name: TWEET_DB_HOST
+          value: tweet-mysql
+        - name: TWEET_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 80
+          name: tweet
+        

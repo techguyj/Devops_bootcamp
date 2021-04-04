@@ -1,0 +1,23 @@
+Create user CSR
+openssl genrsa -out employee.key 2048
+openssl req -new -key employee.key -out employee.csr -subj "/CN=employee/O=codevalue"
+
+Approve CSR
+openssl x509 -req -in employee.csr -CA .minikube/ca.crt -CAkey .minikube/ca.key -CAcreateserial -out employee.crt -days 500
+
+mkdir -p /home/employee/.certs/ && mv employee.* /home/employee/.certs/
+
+kubectl config set-credentials employee --client-certificate=/home/employee/.certs/employee.crt  --client-key=/home/employee/.certs/employee.key
+kubectl config set-context employee-context --cluster=minikube --namespace=default --user=employee
+
+Apply role and binding
+kubectl apply -f roles/role.yaml -f roles/binding.yaml
+
+Check permissions
+
+[root@control-plane ~]# kubectl --context=employee-context get pods
+NAME    READY   STATUS    RESTARTS   AGE
+mypod   1/1     Running   0          100s
+[root@control-plane ~]# kubectl --context=employee-context label pods mypod unhealthy=true
+Error from server (Forbidden): pods "mypod" is forbidden: User "employee" cannot patch resource "pods" in API group "" in the namespace "default"
+

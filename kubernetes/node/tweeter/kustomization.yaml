@@ -1,0 +1,7 @@
+secretGenerator:
+- name: mysql-pass
+  literals:
+  - password=SuperSecret
+resources:
+  - tweet-app.yaml
+  - tweet-db.yaml
